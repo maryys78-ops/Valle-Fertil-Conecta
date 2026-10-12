@@ -160,7 +160,8 @@
             throw new Error(`Supabase respondió ${respuesta.status}: ${detalle}`);
           }
 
-          return respuesta.status === 204 ? null : respuesta.json();
+          const respuestaTexto = await respuesta.text();
+          return respuestaTexto ? JSON.parse(respuestaTexto) : null;
         }
 
         function escaparHTML(valor) {
