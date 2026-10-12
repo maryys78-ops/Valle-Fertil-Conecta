@@ -230,6 +230,26 @@
           }
         }
 
+        async function cancelarGestion(id) {
+          const solicitud = solicitudes.find((item) => item.id === id);
+          if (!solicitud || solicitud.estado !== 'Aceptado' ||
+              !window.confirm('¿Querés cancelar la aceptación? El pedido volverá a estar disponible.')) {
+            return;
+          }
+
+          try {
+            await consultarSupabase(`?id=eq.${encodeURIComponent(id)}`, {
+              method: 'PATCH',
+              headers: { Prefer: 'return=minimal' },
+              body: JSON.stringify({ estado: 'Pendiente' })
+            });
+            mostrarMensaje('Se canceló la aceptación y el pedido volvió a estar disponible.');
+            await cargarSolicitudes();
+          } catch (error) {
+            mostrarMensaje(`No se pudo cancelar la aceptación. ${error.message}`, true);
+          }
+        }
+
         async function eliminarSolicitud(id) {
           const solicitud = solicitudes.find((item) => item.id === id);
           if (!solicitud || !window.confirm('¿Querés eliminar este pedido realizado?')) {
@@ -303,6 +323,9 @@
                       <span class="bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full">
                         <i class="fa-solid fa-check mr-1"></i> Aceptado
                       </span>
+                      <button onclick="cancelarGestion('${escaparHTML(item.id)}')" aria-label="Cancelar aceptación del pedido" class="bg-amber-100 hover:bg-amber-200 text-amber-800 text-sm font-semibold px-3 py-2 rounded-lg transition">
+                        <i class="fa-solid fa-xmark mr-1" aria-hidden="true"></i> Cancelar
+                      </button>
                     `}
                     <button onclick="eliminarSolicitud('${escaparHTML(item.id)}')" aria-label="Eliminar pedido realizado" class="bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold px-3 py-2 rounded-lg transition">
                       <i class="fa-solid fa-trash mr-1" aria-hidden="true"></i> Eliminar
@@ -329,6 +352,7 @@
         window.cambiarVista = cambiarVista;
         window.guardarSolicitud = guardarSolicitud;
         window.tomarGestion = tomarGestion;
+        window.cancelarGestion = cancelarGestion;
         window.eliminarSolicitud = eliminarSolicitud;
     </script>
 </body>
