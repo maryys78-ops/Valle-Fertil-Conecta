@@ -110,7 +110,7 @@
 
     </main>
 
-    <a href="https://wa.me/5492645066391?text=Hola%2C%20quiero%20consultar%20para%20gestionar%20un%20tr%C3%A1mite%20en%20Valle%20F%C3%A9rtil."
+    <a id="enlace-whatsapp" href="https://wa.me/5492645066391?text=%C2%A1Hola%21%20Me%20comunico%20con%20Valle%20F%C3%A9rtil%20Conecta%20para%20solicitar%20un%20encargo.%0A%0AMi%20nombre%20es%3A%0AN%C3%BAmero%20de%20pedido%20%28si%20ya%20lo%20realic%C3%A9%20en%20la%20web%29%3A%0ATipo%20de%20encargo%3A%0ADescripci%C3%B3n%3A%0A%0AQuisiera%20conocer%20los%20pasos%20para%20continuar%20con%20la%20gesti%C3%B3n.%20%C2%A1Gracias%21"
        target="_blank"
        rel="noopener noreferrer"
        aria-label="Consultar por WhatsApp para gestionar un trámite"
@@ -174,6 +174,25 @@
           })[caracter]);
         }
 
+        function crearMensajeWhatsApp(solicitud, numeroPedido) {
+          return [
+            '¡Hola! Me comunico con Valle Fértil Conecta para solicitar un encargo.',
+            '',
+            `Mi nombre es: ${solicitud.nombre}`,
+            `Número de pedido (si ya lo realicé en la web): ${numeroPedido}`,
+            `Tipo de encargo: ${solicitud.categoria}`,
+            `Descripción: ${solicitud.descripcion}`,
+            `Lugar: ${solicitud.lugar}`,
+            `Ofrecimiento económico: $${solicitud.remuneracion} ARS`,
+            '',
+            'Quisiera conocer los pasos para continuar con la gestión. ¡Gracias!'
+          ].join('\n');
+        }
+
+        function crearEnlaceWhatsApp(texto) {
+          return `https://wa.me/5492645066391?text=${encodeURIComponent(texto)}`;
+        }
+
         function cambiarVista(vista) {
           const vistaPublicar = document.getElementById('vista-publicar');
           const vistaSolicitudes = document.getElementById('vista-solicitudes');
@@ -191,26 +210,28 @@
         async function guardarSolicitud(e) {
           e.preventDefault();
 
-          const nuevaSolicitud = {
-            nombre: document.getElementById('nombre').value.trim(),
-            categoria: document.getElementById('categoria').value,
-            remuneracion: Number(document.getElementById('remuneracion').value),
-            lugar: document.getElementById('lugar').value.trim(),
-            descripcion: document.getElementById('descripcion').value.trim(),
-            estado: 'Pendiente',
-            fecha: new Date().toLocaleDateString('es-AR')
-          };
-
           try {
+            const nuevaSolicitud = {
+              id: crypto.randomUUID(),
+              nombre: document.getElementById('nombre').value.trim(),
+              categoria: document.getElementById('categoria').value,
+              remuneracion: Number(document.getElementById('remuneracion').value),
+              lugar: document.getElementById('lugar').value.trim(),
+              descripcion: document.getElementById('descripcion').value.trim(),
+              estado: 'Pendiente',
+              fecha: new Date().toLocaleDateString('es-AR')
+            };
+            nuevaSolicitud.mensaje_whatsapp = crearMensajeWhatsApp(nuevaSolicitud, nuevaSolicitud.id);
+
             await consultarSupabase('', {
               method: 'POST',
               headers: { Prefer: 'return=minimal' },
               body: JSON.stringify(nuevaSolicitud)
             });
-            document.getElementById('form-solicitud').reset();
-            mostrarMensaje('El pedido se publicó correctamente para todos.');
-            cambiarVista('ver-solicitudes');
-            await cargarSolicitudes();
+
+            const enlaceWhatsApp = document.getElementById('enlace-whatsapp');
+            enlaceWhatsApp.href = crearEnlaceWhatsApp(nuevaSolicitud.mensaje_whatsapp);
+            window.location.assign(enlaceWhatsApp.href);
           } catch (error) {
             mostrarMensaje(`No se pudo publicar el pedido. ${error.message}`, true);
           }
